@@ -1,0 +1,38 @@
+<div class="tab-pane fade show active" role="tabpanel" aria-labelledby="nav-email-tab">
+    <div class="d-flex flex-wrap p-20" id="task-file-list">
+        <x-table headType="thead-light">
+            <x-slot name="thead">
+                <th>@lang('app.employee')</th>
+                <th>@lang('modules.timeLogs.startTime')</th>
+                <th>@lang('modules.timeLogs.endTime')</th>
+                <th>@lang('modules.timeLogs.memo')</th>
+                <th>@lang('modules.timeLogs.status')</th>
+                <th class="text-right">@lang('modules.employees.hoursLogged')</th>
+            </x-slot>
+            @forelse ($task->approvedTimeLogs as $item)
+                <tr>
+                    <td><x-employee-image :user="$item->user" /></td>
+                    <td>
+                        {{ $item->start_time->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }}
+                    </td>
+                    <td>
+                        @if (!is_null($item->end_time))
+                            {{ $item->end_time->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }}
+                        @elseif(!is_null($item->activeBreak))
+                            <span class='badge badge-secondary'>{{ __('modules.timeLogs.paused') }}</span>
+                        @else
+                            <span class='badge badge-primary'>{{ __('app.active') }}</span>
+                        @endif
+                    </td>
+                    <td>{{ $item->memo }}</td>
+                    <td><span class='badge badge-{{ $item->approved==1?'success':'danger' }}'>{{ $item->approved==1?'Approved':'Rejected' }} </span></td>
+                    <td class="text-right">{{ $item->approved==1?$item->hours:'0' }}</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="5"><x-cards.no-record :message="__('messages.noRecordFound')" icon="clock" /></td>
+                </tr>
+            @endforelse
+        </x-table>
+    </div>
+</div>

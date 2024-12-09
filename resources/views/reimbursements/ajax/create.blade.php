@@ -1,0 +1,329 @@
+@php $addReimbursementCategoryPermission = user()->permission('manage_reimbursement_category'); @endphp
+<div class="row">
+    <div class="col-sm-12">
+        <x-form id="save-reimbursement-data-form">
+            <div class="add-client bg-white rounded">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal text-capitalize border-bottom-grey">@lang('app.reimbursementDetails')</h4>
+                <div class="row p-20">
+                    <div class="col-md-6 col-lg-4">
+                        <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.reimbursements.itemName')" fieldName="item_name" fieldRequired="true" fieldId="item_name"
+                            :fieldPlaceholder="__('placeholders.reimbursement.item')" />
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        @if(isset($projectName))
+                            <input type="hidden" id="currency_id" name="currency_id" value="{{ $project->currency_id}}">
+                            <x-forms.text :fieldLabel="__('modules.invoices.currency')" fieldName="project-currency" fieldId="project-currency" :fieldValue="$project->currency->currency_name" fieldReadOnly="true" />
+                        @else
+                            <input type="hidden" id="currency_id" name="currency_id" value="{{company()->currency_id}}">
+                            <x-forms.select :fieldLabel="__('modules.invoices.currency')" fieldName="currency" fieldRequired="true" fieldId="currency">
+                                @foreach ($currencies as $currency)
+                                    <option @selected ($currency->id == company()->currency_id)  value="{{ $currency->id }}" data-currency-name="{{$currency->currency_name}}">
+                                        {{ $currency->currency_name }} - ({{ $currency->currency_symbol }})
+                                    </option>
+                                @endforeach
+                            </x-forms.select>
+                        @endif
+                    </div>
+                    <div class="col-md-6 col-lg-2">
+                        <x-forms.number fieldId="exchange_rate" :fieldLabel="__('modules.currencySettings.exchangeRate')"
+                        fieldName="exchange_rate" fieldRequired="true" :fieldValue="(isset($projectName) ? $project->currency->exchange_rate : $companyCurrency->exchange_rate)" fieldReadOnly="true"
+                        :fieldHelp="' '"/>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <x-forms.select fieldId="client_id" fieldName="client_id" :fieldLabel="__('app.client')" search="true">
+                            <option value="">--</option>
+                            @foreach ($clients as $client)
+                                <option value="{{ $client->id }}">{{ $client->company_name }}</option>
+                            @endforeach
+                        </x-forms.select>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <x-forms.datepicker fieldId="purchase_date" fieldRequired="true"
+                            :fieldLabel="__('modules.reimbursements.purchaseDate')" fieldName="purchase_date"
+                            :fieldPlaceholder="__('placeholders.date')"
+                            :fieldValue="\Carbon\Carbon::today()->format(company()->date_format)" />
+                    </div>
+                    <div class="col-md-4">
+                        <x-forms.label class="mt-3" fieldId="category_id" :fieldLabel="__('modules.reimbursements.reimbursementCategory')" fieldRequired="true"></x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker" name="category_id" id="reimbursement_category_id" data-live-search="true" >
+                                <option value="">--</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->category_name }}</option>
+                                @endforeach
+                            </select>
+
+                            @if ($addReimbursementCategoryPermission == 'all' || $addReimbursementCategoryPermission == 'added')
+                                <x-slot name="append">
+                                    <button id="addReimbursementCategory" type="button" class="btn btn-outline-secondary border-grey" data-toggle="tooltip" data-original-title="{{__('modules.reimbursementCategory.addReimbursementCategory') }}">@lang('app.add')</button>
+                                </x-slot>
+                            @endif
+                        </x-forms.input-group>
+                    </div>
+                    <div class="col-md-6 col-lg-4 reimbursement_price">
+                        <x-forms.number class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.amount')" fieldName="price" fieldRequired="true" fieldId="price" :fieldPlaceholder="__('placeholders.price')" />
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <x-forms.label class="mt-3" fieldId="urgency" :fieldLabel="__('app.urgency')" fieldRequired="true"></x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker" name="urgency" id="urgency" data-live-search="true" data-size="8">
+                                <option value="normal">Normal</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </x-forms.input-group>
+                    </div>
+                    <div class="col-md-6 col-lg-4">
+                        <x-forms.label class="mt-3" fieldId="payment_type" :fieldLabel="__('app.paymentType')" fieldRequired="true"></x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker" name="payment_type" id="payment_type" data-live-search="true" data-size="8">
+                                <option value="transfer">Transfer</option>
+                                <option value="cash">Cash</option>
+                            </select>
+                        </x-forms.input-group>
+                    </div>
+                    <div class="col-md-4">
+                        <x-forms.text :fieldLabel="__('modules.reimbursements.purchaseFrom')" fieldName="purchase_from" fieldId="purchase_from" :fieldPlaceholder="__('placeholders.reimbursement.vendor')" />
+                    </div>
+                    <div class="col-md-4 payType">
+                        <x-forms.text :fieldLabel="__('modules.reimbursements.payee')" fieldName="payee" fieldId="payee" fieldRequired="true"/>
+                    </div>
+                    <div class="col-md-6 col-lg-4 payType">
+                        <x-forms.number class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('app.menu.bankaccount')" fieldName="bank_account" fieldRequired="true" fieldId="bank_account"/>
+                    </div>
+                    <div class="col-md-4 payType">
+                        <x-forms.text :fieldLabel="__('modules.reimbursements.bankName')" fieldName="bank_name" fieldId="bank_name" fieldRequired="true"/>
+                    </div>
+                    @if (user()->permission('add_reimbursements') == 'all')
+                        <div class="col-md-6 col-lg-4">
+                            <x-forms.label class="mt-3" fieldId="user_id" :fieldLabel="__('app.employee')" fieldRequired="true"></x-forms.label>
+                            <x-forms.input-group>
+                                <select class="form-control select-picker" name="user_id" id="user_id" data-live-search="true" data-size="8">
+                                    <option value="">--</option>
+                                    @foreach ($employees as $item)
+                                        <x-user-option :user="$item" />
+                                    @endforeach
+                                </select>
+                            </x-forms.input-group>
+                        </div>
+                    @else
+                        <input type="hidden" name="user_id" value="{{ user()->id }}">
+                    @endif
+                    @if(isset($projectName))
+                        <div class="col-md-6 col-lg-4">
+                            <input type="hidden" name="project_id" id="project_id" value="{{ $projectId }}">
+                            <x-forms.text :fieldLabel="__('app.project')" fieldName="projectName" fieldId="projectName" :fieldValue="$projectName" fieldReadOnly="true" />
+                        </div>
+                    @else
+                        @if (user()->permission('add_reimbursements') == 'all')
+                            <div class="col-md-6 col-lg-4">
+                                <x-forms.select fieldId="project_id" fieldName="project_id" :fieldLabel="__('app.project')" search="true">
+                                    <option value="">--</option>
+                                    @foreach ($projects as $project)
+                                        <option data-currency-id="{{ $project->currency_id }}" @selected ($projectId == $project->id) value="{{ $project->id }}">
+                                            {{ $project->project_name }}
+                                        </option>
+                                    @endforeach
+                                </x-forms.select>
+                            </div>
+                        @else
+                            <input type="hidden" name="project_id" value="">
+                        @endif
+                    @endif
+                    <input type = "hidden" name = "mention_user_ids" id = "mentionUserId" class ="mention_user_ids">
+                    <div class="col-md-12">
+                        <div class="form-group my-3">
+                            <x-forms.label fieldId="description" :fieldLabel="__('app.description')"></x-forms.label>
+                            <div id="description"></div>
+                            <textarea name="description" id="description-text" class="d-none"></textarea>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <x-forms.file :fieldLabel="__('app.attachment')" fieldRequired="true" fieldName="bill" fieldId="bill" allowedFileExtensions="pdf png jpg jpeg" :popover="__('messages.fileFormat.multipleImageFile')" />
+                    </div>
+                </div>
+                <x-forms.custom-field :fields="$fields"></x-forms.custom-field>
+                <x-form-actions>
+                    <x-forms.button-primary id="save-reimbursement-form" class="mr-3" icon="check">@lang('app.save')</x-forms.button-primary>
+                    <x-forms.button-cancel :link="route('reimbursements.index')" class="border-0">@lang('app.cancel')</x-forms.button-cancel>
+                </x-form-actions>
+            </div>
+        </x-form>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+        quillMention(null, '#description');
+        $('.custom-date-picker').each(function(ind, el) {
+            datepicker(el, {
+                position: 'bl',
+                ...datepickerConfig
+            });
+        });
+
+        const dp1 = datepicker('#purchase_date', {
+            position: 'bl',
+            ...datepickerConfig
+        });
+
+        $('#save-reimbursement-form').click(function() {
+            let note = document.getElementById('description').children[0].innerHTML;
+            document.getElementById('description-text').value = note;
+            var mention_user_id = $('#description span[data-id]').map(function(){ return $(this).attr('data-id') }).get();
+            $('#mentionUserId').val(mention_user_id.join(','));
+            const url = "{{ route('reimbursements.store') }}";
+            var data = $('#save-reimbursement-data-form').serialize();
+
+            $.easyAjax({
+                url: url,
+                container: '#save-reimbursement-data-form',
+                type: "POST",
+                disableButton: true,
+                blockUI: true,
+                buttonSelector: "#save-reimbursement-form",
+                data: data,
+                file: true,
+                success: function(response) {
+                    window.location.href = response.redirectUrl;
+                }
+            });
+        });
+
+        $('#addReimbursementCategory').click(function() {
+            let userId = $('#user_id').val();
+            const url = "{{ route('reimbursementCategory.create') }}?user_id="+userId;
+            $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
+            $.ajaxModal(MODAL_LG, url);
+        });
+
+        $('#reimbursement_category_id').change(function() {
+            let category_id = $(this).val();
+            $.ajax({
+                type: "POST",
+                url: "{{ route('reimbursements.check_category_detail') }}",
+                data: {'_token': "{{ csrf_token() }}",category_id: category_id},
+                cache: false,
+                success: function(response){
+                    if (response.message == "1") {
+                        $('#price').val(0);
+                        $('.reimbursement_price').hide();
+                    }else{
+                        $('.reimbursement_price').show();
+                    }
+                }
+            });
+        });
+
+        $('#payment_type').change(function() {
+            let type = $(this).val();
+            if(type=='cash') {
+                $('#payee').val('-');
+                $('#bank_account').val(0);
+                $('#bank_name').val('-');
+                $('.payType').hide();
+            }else{
+                $('#payee').val('');
+                $('#bank_account').val('');
+                $('#bank_name').val('');
+                $('.payType').show();
+            } 
+        });
+
+        $('body').on('change', '#user_id', function(){
+            let userId = $(this).val();
+            let categoryId = $('#reimbursement_category_id').val();
+
+            const url = "{{ route('reimbursements.get_employee_projects') }}";
+            let data = $('#save-reimbursement-data-form').serialize();
+
+            $.easyAjax({
+                url: url,
+                type: "GET",
+                data: {'userId' : userId, 'categoryId' : categoryId},
+                success: function(response) {
+                    $('#project_id').html('<option value="">--</option>'+response.data);
+                    $('#project_id').selectpicker('refresh')
+                    $('#reimbursement_category_id').html('<option value="">--</option>'+response.category);
+                    $('#reimbursement_category_id').selectpicker('refresh')
+                }
+            });
+        });
+
+        $('body').on('change', '#reimbursement_category_id', function(){
+            let categoryId = $(this).val();
+            let userId = $('#user_id').val();
+
+            const url = "{{ route('reimbursements.get_category_employees') }}";
+            let data = $('#save-reimbursement-data-form').serialize();
+
+            $.easyAjax({
+                url: url,
+                type: "GET",
+                data: {'categoryId' : categoryId, 'userId' : userId},
+                success: function(response) {
+                    $('#user_id').html('<option value="">--</option>'+response.employees);
+                    $('#user_id').selectpicker('refresh')
+                }
+            });
+        });
+
+        init(RIGHT_MODAL);
+    });
+
+    $('body').on("change", '#currency, #project_id', function() {
+        if ($('#project_id').val() != '') {
+            var curId = $('#project_id option:selected').attr('data-currency-id');
+            $('#currency').removeAttr('disabled');
+            $('#currency').selectpicker('refresh');
+            // $('#currency_id').val(curId);
+            $('#currency').val(curId);
+            $('#currency').prop('disabled', true);
+            $('#currency').selectpicker('refresh');
+        } else {
+            $('#currency').prop('disabled', false);
+            $('#currency').selectpicker('refresh');
+        }
+
+        var id = $('#currency').val();
+        $('#currency_id').val(id);
+        var currencyId = $('#currency_id').val();
+
+        var companyCurrencyName = "{{$companyCurrency->currency_name}}";
+        var currentCurrencyName = $('#currency option:selected').attr('data-currency-name');
+        var companyCurrency = '{{ $companyCurrency->id }}';
+
+        if(currencyId == companyCurrency){
+            $('#exchange_rate').prop('readonly', true);
+        } else{
+            $('#exchange_rate').prop('readonly', false);
+        }
+
+        var token = "{{ csrf_token() }}";
+
+        $.easyAjax({
+            url: "{{ route('payments.account_list') }}",
+            type: "GET",
+            blockUI: true,
+            data: { 'curId' : currencyId , _token: token},
+            success: function(response) {
+                if (response.status == 'success') {
+                    $('#bank_account_id').html(response.data);
+                    $('#bank_account_id').selectpicker('refresh');
+                    $('#exchange_rate').val(1/response.exchangeRate);
+                    let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+currentCurrencyName+' @lang('app.to') '+companyCurrencyName+' )' : '';
+                    $('#exchange_rateHelp').html(currencyExchange);
+                }
+            }
+        });
+    });
+
+    @if(isset($projectName))
+        setExchangeRateHelp();
+        function setExchangeRateHelp(){
+            $('#exchange_rate').prop('readonly', false);
+            var companyCurrencyName = "{{$companyCurrency->currency_name}}";
+            var currentCurrencyName = `{{ $project->currency->currency_name }}` ;
+            let currencyExchange = (companyCurrencyName != currentCurrencyName) ? '( '+currentCurrencyName+' @lang('app.to') '+currentCurrencyName+' )' : '';
+            $('#exchange_rateHelp').html(currencyExchange);
+        }
+    @endif
+</script>
